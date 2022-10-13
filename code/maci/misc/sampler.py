@@ -147,6 +147,7 @@ class SimpleSampler(Sampler):
 
     def log_diagnostics(self):
         super(SimpleSampler, self).log_diagnostics()
+
         logger.record_tabular('max-path-return', self._max_path_return)
         logger.record_tabular('last-path-return', self._last_path_return)
         logger.record_tabular('episodes', self._n_episodes)
@@ -154,7 +155,7 @@ class SimpleSampler(Sampler):
 
 
 class MASampler(SimpleSampler):
-    def __init__(self, agent_num, joint, **kwargs):
+    def __init__(self, tb_writer,agent_num, joint, **kwargs):
         super(SimpleSampler, self).__init__(**kwargs)
         self.agent_num = agent_num
         self.joint = joint
@@ -164,6 +165,7 @@ class MASampler(SimpleSampler):
         self._max_path_return = np.array([-np.inf] * self.agent_num, dtype=np.float32)
         self._n_episodes = 0
         self._total_samples = 0
+        self._tb_writer = tb_writer
 
         self._current_observation_n = None
         self.env = None
@@ -195,7 +197,9 @@ class MASampler(SimpleSampler):
                 action_n.append(np.array(action)[0:agent._action_dim])
             else:
                 action_n.append(np.array(action))
-        next_observation_n, reward_n, done_n, info = self.env.step(action_n)
+
+        next_observation_n, reward_n, done_n, info = self.env.step(action_n)  ## printing action! 
+
         self._path_length += 1
         self._path_return += np.array(reward_n, dtype=np.float32)
         self._total_samples += 1
@@ -218,7 +222,7 @@ class MASampler(SimpleSampler):
                                       reward=reward_n[i],
                                       terminal=done_n[i],
                                       next_observation=next_observation_n[i])
-
+        
         if np.all(done_n) or self._path_length >= self._max_path_length:
             self._current_observation_n = self.env.reset()
             self._max_path_return = np.maximum(self._max_path_return, self._path_return)
@@ -238,6 +242,7 @@ class MASampler(SimpleSampler):
 
     def log_diagnostics(self):
         for i in range(self.agent_num):
+            self._tb_writer.add_scalars("test" + str(i),{"Agent" + str(i): self._max_path_return[i]}, self._total_samples)
             logger.record_tabular('max-path-return_agent_{}'.format(i), self._max_path_return[i])
             logger.record_tabular('mean-path-return_agent_{}'.format(i), self._mean_path_return[i])
             logger.record_tabular('last-path-return_agent_{}'.format(i), self._last_path_return[i])

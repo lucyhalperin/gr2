@@ -11,6 +11,8 @@ import datetime
 from copy import deepcopy
 from maci.get_agents import ddpg_agent, masql_agent, pr2ac_agent
 
+from tensorboardX import SummaryWriter # NOTE: added
+
 import maci.misc.tf_utils as U
 import os
 
@@ -24,7 +26,6 @@ set_session(sess)
 
 def get_particle_game(particle_game_name, arglist):
     env = make_particle_env(game_name=particle_game_name)
-    print(env.action_space, env.observation_space)
     agent_num = env.n
     adv_agent_num = 0
     if particle_game_name == 'simple_push' or particle_game_name == 'simple_adversary':
@@ -47,18 +48,14 @@ def parse_args():
     parser.add_argument('-mu', "--mu", type=float, default=1.5, help="mu")
     parser.add_argument('-r', "--reward_type", type=str, default="abs", help="reward type")
     parser.add_argument('-mp', "--max_path_length", type=int, default=1, help="reward type")
-<<<<<<< HEAD
     parser.add_argument('-ms', "--max_steps", type=int, default=10000, help="reward type")
-=======
-    parser.add_argument('-ms', "--max_steps", type=int, default=20000, help="reward type")
->>>>>>> b5b4e95f91f592911679eca78671ebe723447db6
     parser.add_argument('-me', "--memory", type=int, default=0, help="reward type")
-    parser.add_argument('-n', "--n", type=int, default=10, help="name of the game")
+    parser.add_argument('-n', "--n", type=int, default=2, help="name of the game")
     parser.add_argument('-bs', "--batch_size", type=int, default=64, help="name of the game")
     parser.add_argument('-hm', "--hidden_size", type=int, default=100, help="name of the game")
     parser.add_argument('-re', "--repeat", type=bool, default=False, help="name of the game")
     parser.add_argument('-a', "--aux", type=bool, default=True, help="name of the game")
-    parser.add_argument('-m', "--model_names_setting", type=str, default='PR2AC4_PR2AC4', help="models setting agent vs adv")
+    parser.add_argument('-m', "--model_names_setting", type=str, default='MADDPG_MADDPG', help="models setting agent vs adv")
     return parser.parse_args()
 
 
@@ -92,7 +89,6 @@ def main(arglist):
     elif 'particle' in game_name:
         particle_game_name = game_name.split('-')[-1]
         env, agent_num, model_name, model_names = get_particle_game(particle_game_name, arglist)
-
     now = datetime.datetime.now()
     timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f %Z')
     if 'CG' in model_name:
@@ -101,8 +97,9 @@ def main(arglist):
         model_name = model_name + '-{}'.format(arglist.aux)
 
     suffix = '{}/{}/{}/{}'.format(path_prefix, agent_num, model_name, timestamp)
+    tb_suffix = '{}_{}_{}_{}'.format(path_prefix, agent_num, model_name, timestamp)
 
-    print(suffix)
+    #print(suffix)
 
     logger.add_tabular_output('./log/{}.csv'.format(suffix))
     snapshot_dir = './snapshot/{}'.format(suffix)
@@ -111,10 +108,12 @@ def main(arglist):
     os.makedirs(policy_dir, exist_ok=True)
     logger.set_snapshot_dir(snapshot_dir)
 
+    tb_writer = SummaryWriter('./log/tb_{}'.format(tb_suffix)) # NOTE added
+
     agents = []
     M = arglist.hidden_size
     batch_size = arglist.batch_size
-    sampler = MASampler(agent_num=agent_num, joint=True, max_path_length=30, min_pool_size=100, batch_size=batch_size)
+    sampler = MASampler(tb_writer=tb_writer,agent_num=agent_num, joint=True, max_path_length=30, min_pool_size=100, batch_size=batch_size)
 
     base_kwargs = {
         'sampler': sampler,
@@ -171,8 +170,7 @@ def main(arglist):
 
         for epoch in gt.timed_for(range(base_kwargs['n_epochs'] + 1)):
             logger.push_prefix('Epoch #%d | ' % epoch)
-            if epoch % 1 == 0:
-                print(suffix)
+
             for t in range(base_kwargs['epoch_length']):
                 # TODO.code consolidation: Add control interval to sampler
                 if not initial_exploration_done:
