@@ -43,11 +43,11 @@ def parse_args():
     # ['particle-simple_spread', 'particle-simple_adversary', 'particle-simple_tag', 'particle-simple_push']
     # matrix-prison , matrix-prison
     # pbeauty
-    parser.add_argument('-g', "--game_name", type=str, default="pbeauty", help="name of the game")
+    parser.add_argument('-g', "--game_name", type=str, default="particle-simple-spread", help="name of the game")
     parser.add_argument('-p', "--p", type=float, default=1.1, help="p")
     parser.add_argument('-mu', "--mu", type=float, default=1.5, help="mu")
     parser.add_argument('-r', "--reward_type", type=str, default="abs", help="reward type")
-    parser.add_argument('-mp', "--max_path_length", type=int, default=1, help="reward type")
+    parser.add_argument('-mp', "--max_path_length", type=int, default=25, help="reward type")
     parser.add_argument('-ms', "--max_steps", type=int, default=10000, help="reward type")
     parser.add_argument('-me', "--memory", type=int, default=0, help="reward type")
     parser.add_argument('-n', "--n", type=int, default=2, help="name of the game")
@@ -117,7 +117,7 @@ def main(arglist):
 
     base_kwargs = {
         'sampler': sampler,
-        'epoch_length': 1,
+        'epoch_length': arglist.max_path_length,
         'n_epochs': arglist.max_steps,
         'n_train_repeat': 1,
         'eval_render': True,
@@ -174,7 +174,7 @@ def main(arglist):
             for t in range(base_kwargs['epoch_length']):
                 # TODO.code consolidation: Add control interval to sampler
                 if not initial_exploration_done:
-                    if epoch >= 1000:
+                    if epoch >= 1000:                      # NOTE: change?
                         initial_exploration_done = True
                 sampler.sample()
                 # print('Sampling')
