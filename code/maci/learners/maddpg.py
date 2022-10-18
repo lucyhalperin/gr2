@@ -121,7 +121,7 @@ class MADDPG(MARLAlgorithm):
             tf.float32,
             shape=[None, self._observation_dim],
             name='next_observations_agent_{}'.format(self._agent_id))
-        self._actions_pl = tf.placeholder(providers 
+        self._actions_pl = tf.placeholder(
             tf.float32, shape=[None, self._action_dim],
             name='actions_agent_{}'.format(self._agent_id))
         self._next_actions_ph = tf.placeholder(
