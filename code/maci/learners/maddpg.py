@@ -121,7 +121,7 @@ class MADDPG(MARLAlgorithm):
             tf.float32,
             shape=[None, self._observation_dim],
             name='next_observations_agent_{}'.format(self._agent_id))
-        self._actions_pl = tf.placeholder(
+        self._actions_pl = tf.placeholder(providers 
             tf.float32, shape=[None, self._action_dim],
             name='actions_agent_{}'.format(self._agent_id))
         self._next_actions_ph = tf.placeholder(
@@ -264,8 +264,8 @@ class MADDPG(MARLAlgorithm):
 
         feed_dict = self._get_feed_dict(batch)
         self._sess.run(self._training_ops, feed_dict)
-        if iteration % self._qf_target_update_interval == 0 and self._train_qf:
-            self._sess.run(self._target_ops)
+        #if iteration % self._qf_target_update_interval == 0 and self._train_qf:
+        self._sess.run(self._target_ops)  # NOTE: changed
 
     def _get_feed_dict(self, batch):
         """Construct a TensorFlow feed dictionary from a sample batch."""

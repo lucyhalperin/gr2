@@ -43,7 +43,7 @@ def parse_args():
     # ['particle-simple_spread', 'particle-simple_adversary', 'particle-simple_tag', 'particle-simple_push']
     # matrix-prison , matrix-prison
     # pbeauty
-    parser.add_argument('-g', "--game_name", type=str, default="particle-simple-spread", help="name of the game")
+    parser.add_argument('-g', "--game_name", type=str, default="particle-simple_spread", help="name of the game")
     parser.add_argument('-p', "--p", type=float, default=1.1, help="p")
     parser.add_argument('-mu', "--mu", type=float, default=1.5, help="mu")
     parser.add_argument('-r', "--reward_type", type=str, default="abs", help="reward type")
@@ -213,7 +213,7 @@ def main(arglist):
                             agent.policy.set_noise_level(noise)
                         except:
                             pass
-
+                # if t%24 == 0 and t!= 0:
                 for j in range(base_kwargs['n_train_repeat']):
                     batch_n = []
                     recent_batch_n = []

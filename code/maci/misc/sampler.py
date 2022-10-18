@@ -199,6 +199,7 @@ class MASampler(SimpleSampler):
                 action_n.append(np.array(action))
 
         next_observation_n, reward_n, done_n, info = self.env.step(action_n)  ## printing action! 
+        self.env.render()
 
         self._path_length += 1
         self._path_return += np.array(reward_n, dtype=np.float32)
