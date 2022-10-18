@@ -113,7 +113,7 @@ def main(arglist):
     agents = []
     M = arglist.hidden_size
     batch_size = arglist.batch_size
-    sampler = MASampler(tb_writer=tb_writer,agent_num=agent_num, joint=True, max_path_length=30, min_pool_size=100, batch_size=batch_size)
+    sampler = MASampler(tb_writer=tb_writer,agent_num=agent_num, joint=True, max_path_length=25, min_pool_size=100, batch_size=batch_size)
 
     base_kwargs = {
         'sampler': sampler,
@@ -173,9 +173,9 @@ def main(arglist):
 
             for t in range(base_kwargs['epoch_length']):
                 # TODO.code consolidation: Add control interval to sampler
-                if not initial_exploration_done:
-                    if epoch >= 1000:                      # NOTE: change?
-                        initial_exploration_done = True
+                if not initial_exploration_done:                  
+                    if epoch >= 1000/arglist.max_path_length: # NOTE: change?                  
+                        initial_exploration_done = True                  
                 sampler.sample()
                 # print('Sampling')
                 if not initial_exploration_done:

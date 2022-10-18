@@ -266,6 +266,8 @@ class MADDPG(MARLAlgorithm):
         self._sess.run(self._training_ops, feed_dict)
         #if iteration % self._qf_target_update_interval == 0 and self._train_qf:
         self._sess.run(self._target_ops)  # NOTE: changed
+        self.log_diagnostics(iteration,batch)
+
 
     def _get_feed_dict(self, batch):
         """Construct a TensorFlow feed dictionary from a sample batch."""
@@ -286,7 +288,7 @@ class MADDPG(MARLAlgorithm):
         return feeds
 
     @overrides
-    def log_diagnostics(self, batch):
+    def log_diagnostics(self, iteration, batch):
         """Record diagnostic information.
         Records the mean and standard deviation of Q-function and the
         squared Bellman residual of the  s (mean squared Bellman error)
@@ -297,6 +299,12 @@ class MADDPG(MARLAlgorithm):
         feeds = self._get_feed_dict(batch)
         qf, bellman_residual = self._sess.run(
             [self._q_values, self._bellman_residual], feeds)
+        
+        print(5/0)
+        
+        self._tb_writer.add_scalars("bellman_residual",{"Agent" + str(self._agent_id): bellman_residual}, iteration)
+        self._tb_writer.add_scalars("pg_loss",{"Agent" + str(self._agent_id): pg_loss[0]}, iteration)
+        self._tb_writer.add_scalars("random_policy_weight",{"Agent" + str(self._agent_id): tvars_vals[-1][-1]}, iteration)
 
         logger.record_tabular('qf-avg-agent-{}'.format(self._agent_id), np.mean(qf))
         logger.record_tabular('qf-std-agent-{}'.format(self._agent_id), np.std(qf))

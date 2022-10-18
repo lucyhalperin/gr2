@@ -243,7 +243,7 @@ class MASampler(SimpleSampler):
 
     def log_diagnostics(self):
         for i in range(self.agent_num):
-            self._tb_writer.add_scalars("test" + str(i),{"Agent" + str(i): self._max_path_return[i]}, self._total_samples)
+            self._tb_writer.add_scalars("Last_return",{"Agent" + str(i): self._max_path_return[i]}, self._total_samples)
             logger.record_tabular('max-path-return_agent_{}'.format(i), self._max_path_return[i])
             logger.record_tabular('mean-path-return_agent_{}'.format(i), self._mean_path_return[i])
             logger.record_tabular('last-path-return_agent_{}'.format(i), self._last_path_return[i])
