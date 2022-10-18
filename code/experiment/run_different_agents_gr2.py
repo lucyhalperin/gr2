@@ -145,7 +145,7 @@ def main(arglist):
                 elif model_name == 'DDPG-OM' or model_name == 'DDPG-ToM':
                     joint = True
                     opponent_modelling = True
-                agent = ddpg_agent(joint, opponent_modelling, model_names, i, env, M, u_range, base_kwargs, game_name=game_name)
+                agent = ddpg_agent(tb_writer,joint, opponent_modelling, model_names, i, env, M, u_range, base_kwargs, game_name=game_name)
 
             agents.append(agent)
 
@@ -213,72 +213,72 @@ def main(arglist):
                             agent.policy.set_noise_level(noise)
                         except:
                             pass
-                # if t%24 == 0 and t!= 0:
-                for j in range(base_kwargs['n_train_repeat']):
-                    batch_n = []
-                    recent_batch_n = []
-                    indices = None
-                    receent_indices = None
-                    for i, agent in enumerate(agents):
-                        if i == 0:
-                            batch = agent.pool.random_batch(batch_size)
-                            indices = agent.pool.indices
-                            receent_indices = list(range(agent.pool._top-batch_size, agent.pool._top))
+                if t%24 == 0 and t!= 0:
+                    for j in range(base_kwargs['n_train_repeat']):
+                        batch_n = []
+                        recent_batch_n = []
+                        indices = None
+                        receent_indices = None
+                        for i, agent in enumerate(agents):
+                            if i == 0:
+                                batch = agent.pool.random_batch(batch_size)
+                                indices = agent.pool.indices
+                                receent_indices = list(range(agent.pool._top-batch_size, agent.pool._top))
 
-                        batch_n.append(agent.pool.random_batch_by_indices(indices))
-                        recent_batch_n.append(agent.pool.random_batch_by_indices(receent_indices))
+                            batch_n.append(agent.pool.random_batch_by_indices(indices))
+                            recent_batch_n.append(agent.pool.random_batch_by_indices(receent_indices))
 
-                    # print(len(batch_n))
-                    target_next_actions_n = []
-                    try:
-                        for agent, batch in zip(agents, batch_n):
-                            target_next_actions_n.append(agent._target_policy.get_actions(batch['next_observations']))
-                    except:
-                        pass
-
-
-                    opponent_actions_n = np.array([batch['actions'] for batch in batch_n])
-                    recent_opponent_actions_n = np.array([batch['actions'] for batch in recent_batch_n])
-
-                    ####### figure out
-                    recent_opponent_observations_n = []
-                    for batch in recent_batch_n:
-                        recent_opponent_observations_n.append(batch['observations'])
-
-
-                    current_actions = [agents[i]._policy.get_actions(batch_n[i]['next_observations'])[0][0] for i in range(agent_num)]
-                    all_actions_k = []
-                    for i, agent in enumerate(agents):
-                        if isinstance(agent, MAVBAC):
-                            if agent._k > 0:
-                                batch_actions_k = agent._policy.get_all_actions(batch_n[i]['next_observations'])
-                                actions_k = [a[0][0] for a in batch_actions_k]
-                                all_actions_k.append(';'.join(list(map(str, actions_k))))
-                    if len(all_actions_k) > 0:
-                        with open('{}/all_actions.csv'.format(policy_dir), 'a') as f:
-                            f.write(','.join(list(map(str, all_actions_k))) + '\n')
-                    with open('{}/policy.csv'.format(policy_dir), 'a') as f:
-                        f.write(','.join(list(map(str, current_actions)))+'\n')
-                    # print('============')
-                    for i, agent in enumerate(agents):
+                        # print(len(batch_n))
+                        target_next_actions_n = []  
                         try:
-                            batch_n[i]['next_actions'] = deepcopy(target_next_actions_n[i])
+                            for agent, batch in zip(agents, batch_n):
+                                target_next_actions_n.append(agent._target_policy.get_actions(batch['next_observations']))
                         except:
                             pass
-                        batch_n[i]['opponent_actions'] = np.reshape(np.delete(deepcopy(opponent_actions_n), i, 0), (-1, agent._opponent_action_dim))
-                        if agent.joint:
-                            if agent.opponent_modelling:
-                                batch_n[i]['recent_opponent_observations'] = recent_opponent_observations_n[i]
-                                batch_n[i]['recent_opponent_actions'] = np.reshape(np.delete(deepcopy(recent_opponent_actions_n), i, 0), (-1, agent._opponent_action_dim))
-                                batch_n[i]['opponent_next_actions'] = agent.opponent_policy.get_actions(batch_n[i]['next_observations'])
-                            else:
-                                batch_n[i]['opponent_next_actions'] = np.reshape(np.delete(deepcopy(target_next_actions_n), i, 0), (-1, agent._opponent_action_dim))
-                        if isinstance(agent, MAVBAC) or isinstance(agent, MASQL):
-                            agent._do_training(iteration=t + epoch * agent._epoch_length, batch=batch_n[i], annealing=alpha)
-                        else:
-                            agent._do_training(iteration=t + epoch * agent._epoch_length, batch=batch_n[i])
-                gt.stamp('train')
 
+
+                        opponent_actions_n = np.array([batch['actions'] for batch in batch_n])
+                        recent_opponent_actions_n = np.array([batch['actions'] for batch in recent_batch_n])
+
+                        ####### figure out
+                        recent_opponent_observations_n = []
+                        for batch in recent_batch_n:
+                            recent_opponent_observations_n.append(batch['observations'])
+
+
+                        current_actions = [agents[i]._policy.get_actions(batch_n[i]['next_observations'])[0][0] for i in range(agent_num)]
+                        all_actions_k = []
+                        for i, agent in enumerate(agents):
+                            if isinstance(agent, MAVBAC):
+                                if agent._k > 0:
+                                    batch_actions_k = agent._policy.get_all_actions(batch_n[i]['next_observations'])
+                                    actions_k = [a[0][0] for a in batch_actions_k]
+                                    all_actions_k.append(';'.join(list(map(str, actions_k))))
+                        if len(all_actions_k) > 0:
+                            with open('{}/all_actions.csv'.format(policy_dir), 'a') as f:
+                                f.write(','.join(list(map(str, all_actions_k))) + '\n')
+                        with open('{}/policy.csv'.format(policy_dir), 'a') as f:
+                            f.write(','.join(list(map(str, current_actions)))+'\n')
+                        # print('============')
+                        for i, agent in enumerate(agents):
+                            try:
+                                batch_n[i]['next_actions'] = deepcopy(target_next_actions_n[i])
+                            except:
+                                pass
+                            batch_n[i]['opponent_actions'] = np.reshape(np.delete(deepcopy(opponent_actions_n), i, 0), (-1, agent._opponent_action_dim))
+                            if agent.joint:
+                                if agent.opponent_modelling:
+                                    batch_n[i]['recent_opponent_observations'] = recent_opponent_observations_n[i]
+                                    batch_n[i]['recent_opponent_actions'] = np.reshape(np.delete(deepcopy(recent_opponent_actions_n), i, 0), (-1, agent._opponent_action_dim))
+                                    batch_n[i]['opponent_next_actions'] = agent.opponent_policy.get_actions(batch_n[i]['next_observations'])
+                                else:
+                                    batch_n[i]['opponent_next_actions'] = np.reshape(np.delete(deepcopy(target_next_actions_n), i, 0), (-1, agent._opponent_action_dim))
+                            if isinstance(agent, MAVBAC) or isinstance(agent, MASQL):
+                                agent._do_training(iteration=t + epoch * agent._epoch_length, batch=batch_n[i], annealing=alpha)
+                            else:
+                                agent._do_training(iteration=t + epoch * agent._epoch_length, batch=batch_n[i])
+                    gt.stamp('train')
+    
             # self._evaluate(epoch)
 
             # for agent in agents:

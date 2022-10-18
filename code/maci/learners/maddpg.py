@@ -23,6 +23,7 @@ class MADDPG(MARLAlgorithm):
     def __init__(
             self,
             base_kwargs,
+            tb_writer,
             agent_id,
             env,
             pool,
@@ -60,6 +61,7 @@ class MADDPG(MARLAlgorithm):
         self.opponent_policy = opponent_policy
         # self._target_policy._name = 'target_' + self._target_policy._name
         self.plotter = plotter
+        self._tb_writer = tb_writer
 
         self._agent_id = agent_id
         self.joint = joint
@@ -300,7 +302,9 @@ class MADDPG(MARLAlgorithm):
         qf, bellman_residual = self._sess.run(
             [self._q_values, self._bellman_residual], feeds)
         
-        print(5/0)
+        pg_loss = self._sess.run([self._pg_loss], feeds)  # NOTE: check this
+        var = [v for v in tf.trainable_variables() if v.name == "policy_agent_" + str(self._agent_id) + "/layer_1/weight:0"][0]
+        tvars_vals = self._sess.run(var) # tvars_vals[-1][-1]
         
         self._tb_writer.add_scalars("bellman_residual",{"Agent" + str(self._agent_id): bellman_residual}, iteration)
         self._tb_writer.add_scalars("pg_loss",{"Agent" + str(self._agent_id): pg_loss[0]}, iteration)

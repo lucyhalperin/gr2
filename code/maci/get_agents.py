@@ -178,7 +178,7 @@ def pr2ac_agent(model_name, i, env, M, u_range, base_kwargs, k=0, g=False, mu=1.
     return agent
 
 
-def ddpg_agent(joint, opponent_modelling, model_name, i, env, M, u_range, base_kwargs, game_name='matrix'):
+def ddpg_agent(tb_writer,joint, opponent_modelling, model_name, i, env, M, u_range, base_kwargs, game_name='matrix'):
     # joint = True
     # opponent_modelling = False
     print(model_name)
@@ -234,6 +234,7 @@ def ddpg_agent(joint, opponent_modelling, model_name, i, env, M, u_range, base_k
 
     agent = MADDPG(
         base_kwargs=base_kwargs,
+        tb_writer=tb_writer,
         agent_id=i,
         env=env,
         pool=pool,
