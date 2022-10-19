@@ -23,6 +23,8 @@ config.gpu_options.allow_growth = True  # dynamically grow the memory used on th
 sess = tf.Session(config=config)
 set_session(sess)
 
+np.random.seed(1) 
+tf.set_random_seed(1)  
 
 def get_particle_game(particle_game_name, arglist):
     env = make_particle_env(game_name=particle_game_name)
@@ -48,14 +50,14 @@ def parse_args():
     parser.add_argument('-mu', "--mu", type=float, default=1.5, help="mu")
     parser.add_argument('-r', "--reward_type", type=str, default="abs", help="reward type")
     parser.add_argument('-mp', "--max_path_length", type=int, default=25, help="reward type")
-    parser.add_argument('-ms', "--max_steps", type=int, default=10000, help="reward type")
+    parser.add_argument('-ms', "--max_steps", type=int, default=15000, help="reward type")
     parser.add_argument('-me', "--memory", type=int, default=0, help="reward type")
     parser.add_argument('-n', "--n", type=int, default=2, help="name of the game")
     parser.add_argument('-bs', "--batch_size", type=int, default=64, help="name of the game")
     parser.add_argument('-hm', "--hidden_size", type=int, default=100, help="name of the game")
     parser.add_argument('-re', "--repeat", type=bool, default=False, help="name of the game")
     parser.add_argument('-a', "--aux", type=bool, default=True, help="name of the game")
-    parser.add_argument('-m', "--model_names_setting", type=str, default='MADDPG_MADDPG', help="models setting agent vs adv")
+    parser.add_argument('-m', "--model_names_setting", type=str, default='PR2AC2_PR2AC2', help="models setting agent vs adv")
     return parser.parse_args()
 
 
@@ -132,7 +134,7 @@ def main(arglist):
                 mu = arglist.mu
                 if 'G' in model_name:
                     g = True
-                agent = pr2ac_agent(model_name, i, env, M, u_range, base_kwargs, k=k, g=g, mu=mu, game_name=game_name, aux=arglist.aux)
+                agent = pr2ac_agent(tb_writer,model_name, i, env, M, u_range, base_kwargs, k=k, g=g, mu=mu, game_name=game_name, aux=arglist.aux)
             elif model_name == 'MASQL':
                 agent = masql_agent(model_name, i, env, M, u_range, base_kwargs, game_name=game_name)
             else:

@@ -22,6 +22,7 @@ class MAVBAC(MARLAlgorithm):
     def __init__(
             self,
             base_kwargs,
+            tb_writer,
             agent_id,
             env,
             pool,
@@ -65,6 +66,7 @@ class MAVBAC(MARLAlgorithm):
         self._target_policy = target_policy
         self._conditional_policy = conditional_policy
         self.plotter = plotter
+        self._tb_writer = tb_writer
         self.joint = joint
         self.joint_policy = joint_policy
         self.opponent_action_range = opponent_action_range
@@ -276,7 +278,7 @@ class MAVBAC(MARLAlgorithm):
                     opponent_actions=all_actions[-4], reuse=tf.AUTO_REUSE)
                 pg_loss += tf.reduce_mean(q_k_2 - q_k)
 
-
+        self._pg_loss = pg_loss
         # todo add level k Q loss:
 
 
@@ -402,11 +404,13 @@ class MAVBAC(MARLAlgorithm):
     @overrides
     def _do_training(self, iteration, batch, annealing=1.):
         """Run the operations for updating training and target ops."""
-
+        self._annealing = annealing
         feed_dict = self._get_feed_dict(batch, annealing)
         self._sess.run(self._training_ops, feed_dict)
-        if iteration % self._qf_target_update_interval == 0 and self._train_qf:
-            self._sess.run(self._target_ops)
+        #if iteration % self._qf_target_update_interval == 0 and self._train_qf:
+        self._sess.run(self._target_ops)
+        self.log_diagnostics(iteration,batch)
+
 
     def _get_feed_dict(self, batch, annealing):
         """Construct a TensorFlow feed dictionary from a sample batch."""
@@ -426,7 +430,7 @@ class MAVBAC(MARLAlgorithm):
         return feeds
 
     @overrides
-    def log_diagnostics(self, batch):
+    def log_diagnostics(self, iteration,batch):
         """Record diagnostic information.
         Records the mean and standard deviation of Q-function and the
         squared Bellman residual of the  s (mean squared Bellman error)
@@ -434,9 +438,20 @@ class MAVBAC(MARLAlgorithm):
         Also call the `draw` method of the plotter, if plotter is defined.
         """
 
-        feeds = self._get_feed_dict(batch)
+        feeds = self._get_feed_dict(batch,self._annealing)
         qf, bellman_residual = self._sess.run(
             [self._q_values, self._bellman_residual], feeds)
+        
+        pg_loss = self._sess.run([self._pg_loss], feeds)  ## NOTE added ?? not really sure if this is doing what I think it is
+        if self._k %2 == 0:
+            var = [v for v in tf.trainable_variables() if v.name == "opponent_conditional_policy_agent_" + str(self._agent_id) + "/layer_1/weight:0"][0]
+        else:
+            var = [v for v in tf.trainable_variables() if v.name == "policy_agent_" + str(self._agent_id) + "/layer_1/weight:0"][0]
+        tvars_vals = self._sess.run(var)
+
+        self._tb_writer.add_scalars("bellman_residual",{"Agent" + str(self._agent_id): bellman_residual}, iteration)
+        self._tb_writer.add_scalars("pg_loss",{"Agent" + str(self._agent_id): pg_loss[0]}, iteration)
+        self._tb_writer.add_scalars("random_policy_weight",{"Agent" + str(self._agent_id): tvars_vals[-1][-1]}, iteration)
 
         logger.record_tabular('qf-avg-agent-{}'.format(self._agent_id), np.mean(qf))
         logger.record_tabular('qf-std-agent-{}'.format(self._agent_id), np.std(qf))

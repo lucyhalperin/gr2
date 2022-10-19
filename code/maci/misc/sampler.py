@@ -199,9 +199,12 @@ class MASampler(SimpleSampler):
                 action_n.append(np.array(action))
 
         next_observation_n, reward_n, done_n, info = self.env.step(action_n)  ## printing action! 
-        self.env.render()
+        if self._total_samples > 100000:
+            self.env.render()
 
         self._path_length += 1
+        #if self._total_samples > 13775:
+        #    print(action_n,reward_n)
         self._path_return += np.array(reward_n, dtype=np.float32)
         self._total_samples += 1
 
@@ -243,7 +246,9 @@ class MASampler(SimpleSampler):
 
     def log_diagnostics(self):
         for i in range(self.agent_num):
-            self._tb_writer.add_scalars("Last_return",{"Agent" + str(i): self._max_path_return[i]}, self._total_samples)
+            self._tb_writer.add_scalars("Last_return",{"Agent" + str(i): self._last_path_return[i]}, self._total_samples)
+            if np.isnan(self._max_path_return[i]):
+                print(5/0)
             logger.record_tabular('max-path-return_agent_{}'.format(i), self._max_path_return[i])
             logger.record_tabular('mean-path-return_agent_{}'.format(i), self._mean_path_return[i])
             logger.record_tabular('last-path-return_agent_{}'.format(i), self._last_path_return[i])

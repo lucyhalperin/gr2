@@ -95,7 +95,7 @@ def get_level_k_policy(env, k, M, agent_id, u_range, opponent_conditional_policy
     return k_policy, target_k_policy
 
 
-def pr2ac_agent(model_name, i, env, M, u_range, base_kwargs, k=0, g=False, mu=1.5, game_name='matrix', aux=True):
+def pr2ac_agent(tb_writer,model_name, i, env, M, u_range, base_kwargs, k=0, g=False, mu=1.5, game_name='matrix', aux=True):
     joint = False
     squash = True
     squash_func = tf.tanh
@@ -151,6 +151,7 @@ def pr2ac_agent(model_name, i, env, M, u_range, base_kwargs, k=0, g=False, mu=1.
 
     agent = MAVBAC(
         base_kwargs=base_kwargs,
+        tb_writer=tb_writer,
         agent_id=i,
         env=env,
         pool=pool,

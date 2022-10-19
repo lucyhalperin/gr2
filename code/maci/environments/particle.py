@@ -136,6 +136,7 @@ class ParticleEnv(gym.Env):
             info_n['n'].append(self._get_info(agent))
 
         # all agents get total reward in cooperative case
+        #print(reward_n)
         reward = np.sum(reward_n)
         if self.shared_reward:
             reward_n = [reward] * self.n
@@ -252,7 +253,7 @@ class ParticleEnv(gym.Env):
                     else:
                         word = alphabet[np.argmax(other.state.c)]
                     message += (other.name + ' to ' + agent.name + ': ' + word + '   ')
-            print(message)
+            #print(message)
 
         for i in range(len(self.viewers)):
             # create viewers (if necessary)
