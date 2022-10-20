@@ -221,13 +221,13 @@ def ddpg_agent(tb_writer,joint, opponent_modelling, model_name, i, env, M, u_ran
         policy = DeterministicNNPolicy(env.env_specs,
                                    hidden_layer_sizes=(M, M),
                                    squash=squash, squash_func=squash_func, sampling=sampling,u_range=u_range, joint=False,
-                                   agent_id=i)
+                                   agent_id=i,tb_writer=tb_writer)
         target_policy = DeterministicNNPolicy(env.env_specs,
                                           hidden_layer_sizes=(M, M),
                                           name='target_policy',
                                           squash=squash, squash_func=squash_func,sampling=sampling, u_range=u_range,
                                           joint=False,
-                                          agent_id=i)
+                                          agent_id=i,tb_writer=tb_writer)
     qf = NNQFunction(env_spec=env.env_specs, hidden_layer_sizes=[M, M], joint=joint, agent_id=i)
     target_qf = NNQFunction(env_spec=env.env_specs, hidden_layer_sizes=[M, M], name='target_qf', joint=joint,
                             agent_id=i)

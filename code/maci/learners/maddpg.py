@@ -261,13 +261,16 @@ class MADDPG(MARLAlgorithm):
         self._sess.run(self._target_ops)
 
     @overrides
-    def _do_training(self, iteration, batch):
+    def _do_training(self, epoch,iteration, batch):
         """Run the operations for updating training and target ops."""
 
         feed_dict = self._get_feed_dict(batch)
         self._sess.run(self._training_ops, feed_dict)
+        #print(iteration)
         #if iteration % self._qf_target_update_interval == 0 and self._train_qf:
-        self._sess.run(self._target_ops)  # NOTE: changed
+        if epoch%10  ==0 and iteration%24==0:
+            print(iteration)
+            self._sess.run(self._target_ops)  # NOTE: changedt
         self.log_diagnostics(iteration,batch)
 
 

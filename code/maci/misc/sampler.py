@@ -192,15 +192,15 @@ class MASampler(SimpleSampler):
             self._current_observation_n = self.env.reset()
         action_n = []
         for agent, current_observation in zip(self.agents, self._current_observation_n):
-            action, _ = agent.policy.get_action(current_observation)
+            action, _ = agent.policy.get_action(current_observation,self._n_episodes)
             if agent.joint_policy:
                 action_n.append(np.array(action)[0:agent._action_dim])
             else:
                 action_n.append(np.array(action))
 
         next_observation_n, reward_n, done_n, info = self.env.step(action_n)  ## printing action! 
-        if self._total_samples > 100000:
-            self.env.render()
+        #if self._total_samples > 100000:
+        #    self.env.render()
 
         self._path_length += 1
         #if self._total_samples > 13775:

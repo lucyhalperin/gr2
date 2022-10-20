@@ -30,8 +30,9 @@ class DeterministicNNPolicy(NNPolicy, Serializable):
                  joint=False,
                  opponent_policy=False,
                  agent_id=None,
+                 tb_writer=None,
                  sampling=False,
-                 mu=0, theta=0.15, sigma=0.3):
+                 mu=0, theta=0.15, sigma=0.3):  #mu=0, theta=0.15, sigma=0.3):
         Serializable.quick_init(self, locals())
         if env_spec is None:
             self._observation_dim = observation_space.flat_dim
@@ -61,6 +62,7 @@ class DeterministicNNPolicy(NNPolicy, Serializable):
         self._name = name + '_agent_{}'.format(agent_id)
         self.noise_level = noise_level
         self.sampling = sampling
+        self._tb_writer=tb_writer
 
         self.mu = mu
         self.theta = theta
@@ -77,7 +79,8 @@ class DeterministicNNPolicy(NNPolicy, Serializable):
         super(DeterministicNNPolicy, self).__init__(
             env_spec, self._observation_ph, self._actions, self._name)
 
-    def evolve_noise_state(self):
+    def evolve_noise_state(self): # hard coded as mu=0, theta=0.15, sigma=0.3): https://github.com/rll/rllab/blob/master/rllab/exploration_strategies/ou_strategy.py
+
         x = self.state
         dx = self.theta * (self.mu - x) + self.sigma * np.random.randn(len(x))
         self.state = x + dx
@@ -91,13 +94,16 @@ class DeterministicNNPolicy(NNPolicy, Serializable):
         assert (noise_level >= 0) and (noise_level <= 1)
         self.noise_level = noise_level
 
-    def get_action(self, observation):
-        return self.get_actions(observation[None])[0], None
+    def get_action(self, observation,timestep):
+        return self.get_actions(observation[None],timestep)[0], None
 
-    def get_actions(self, observations):
+    def get_actions(self, observations,timestep):
         feeds = {self._observation_ph: observations}
         actions = tf.get_default_session().run(self._action, feeds)
-        # return actions
+        # return actions, action space = -1,1
+        noise_tb = self._u_range * self.noise_level * self.evolve_noise_state()
+        self._tb_writer.add_scalars("noise",{"Agent" + str(self.agent_id): np.abs(noise_tb[0])},timestep)
+        #print(actions)
         return np.clip(actions + self._u_range * self.noise_level * self.evolve_noise_state(), -self._u_range, self._u_range)
 
     def actions_for(self, observations, reuse=False):
@@ -328,7 +334,8 @@ class DeterministicToMNNPolicy(NNPolicy, Serializable):
     def get_actions(self, observations):
         feeds = {self._observation_ph: observations}
         actions = tf.get_default_session().run(self._action, feeds)
-        # return actions
+        # return actions, action space: -1.1
+        #print(self.self.noise_level * self.evolve_noise_state)
         return np.clip(actions + self._u_range * self.noise_level * self.evolve_noise_state(), -self._u_range, self._u_range)
 
     def actions_for(self, observations, reuse=False):

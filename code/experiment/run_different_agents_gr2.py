@@ -50,14 +50,14 @@ def parse_args():
     parser.add_argument('-mu', "--mu", type=float, default=1.5, help="mu")
     parser.add_argument('-r', "--reward_type", type=str, default="abs", help="reward type")
     parser.add_argument('-mp', "--max_path_length", type=int, default=25, help="reward type")
-    parser.add_argument('-ms', "--max_steps", type=int, default=15000, help="reward type")
+    parser.add_argument('-ms', "--max_steps", type=int, default=300000, help="reward type")
     parser.add_argument('-me', "--memory", type=int, default=0, help="reward type")
     parser.add_argument('-n', "--n", type=int, default=2, help="name of the game")
     parser.add_argument('-bs', "--batch_size", type=int, default=64, help="name of the game")
     parser.add_argument('-hm', "--hidden_size", type=int, default=100, help="name of the game")
     parser.add_argument('-re', "--repeat", type=bool, default=False, help="name of the game")
     parser.add_argument('-a', "--aux", type=bool, default=True, help="name of the game")
-    parser.add_argument('-m', "--model_names_setting", type=str, default='PR2AC2_PR2AC2', help="models setting agent vs adv")
+    parser.add_argument('-m', "--model_names_setting", type=str, default='MADDPG_MADDPG', help="models setting agent vs adv")
     return parser.parse_args()
 
 
@@ -120,7 +120,7 @@ def main(arglist):
     base_kwargs = {
         'sampler': sampler,
         'epoch_length': arglist.max_path_length,
-        'n_epochs': arglist.max_steps,
+        'n_epochs': int(arglist.max_steps/arglist.max_path_length),
         'n_train_repeat': 1,
         'eval_render': True,
         'eval_n_episodes': 10
@@ -159,8 +159,8 @@ def main(arglist):
         gt.reset()
         gt.set_def_unique(False)
         initial_exploration_done = False
-        # noise = .1
-        noise = 1.
+        # noise = 3.1
+        noise = 0.2  #1 is max
         alpha = .5
 
 
@@ -184,6 +184,7 @@ def main(arglist):
                     continue
                 gt.stamp('sample')
                 # print('Sample Done')
+                """
                 if epoch == base_kwargs['n_epochs']:
                     noise = 0.1
 
@@ -215,7 +216,8 @@ def main(arglist):
                             agent.policy.set_noise_level(noise)
                         except:
                             pass
-                if t%24 == 0 and t!= 0:
+                """
+                if epoch%1 == 0 and t%24==0:
                     for j in range(base_kwargs['n_train_repeat']):
                         batch_n = []
                         recent_batch_n = []
@@ -234,7 +236,7 @@ def main(arglist):
                         target_next_actions_n = []  
                         try:
                             for agent, batch in zip(agents, batch_n):
-                                target_next_actions_n.append(agent._target_policy.get_actions(batch['next_observations']))
+                                target_next_actions_n.append(agent._target_policy.get_actions(batch['next_observations'],epoch))
                         except:
                             pass
 
@@ -248,7 +250,7 @@ def main(arglist):
                             recent_opponent_observations_n.append(batch['observations'])
 
 
-                        current_actions = [agents[i]._policy.get_actions(batch_n[i]['next_observations'])[0][0] for i in range(agent_num)]
+                        current_actions = [agents[i]._policy.get_actions(batch_n[i]['next_observations'],epoch)[0][0] for i in range(agent_num)]
                         all_actions_k = []
                         for i, agent in enumerate(agents):
                             if isinstance(agent, MAVBAC):
@@ -278,7 +280,7 @@ def main(arglist):
                             if isinstance(agent, MAVBAC) or isinstance(agent, MASQL):
                                 agent._do_training(iteration=t + epoch * agent._epoch_length, batch=batch_n[i], annealing=alpha)
                             else:
-                                agent._do_training(iteration=t + epoch * agent._epoch_length, batch=batch_n[i])
+                                agent._do_training(epoch,iteration=t + epoch * agent._epoch_length, batch=batch_n[i])
                     gt.stamp('train')
     
             # self._evaluate(epoch)
