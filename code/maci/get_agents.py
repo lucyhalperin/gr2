@@ -192,7 +192,7 @@ def ddpg_agent(tb_writer,joint, opponent_modelling, model_name, i, env, M, u_ran
         sampling = True
 
     print(joint, opponent_modelling)
-    pool = SimpleReplayBuffer(env.env_specs, max_replay_buffer_size=1e4, joint=joint, agent_id=i)
+    pool = SimpleReplayBuffer(env.env_specs, max_replay_buffer_size=1e5, joint=joint, agent_id=i)   #changed
 
     
         
@@ -245,8 +245,8 @@ def ddpg_agent(tb_writer,joint, opponent_modelling, model_name, i, env, M, u_ran
         target_policy=target_policy,
         opponent_policy=opponent_policy,
         plotter=plotter,
-        policy_lr=3e-4,
-        qf_lr=3e-4,
+        policy_lr=10e-4,  
+        qf_lr=10e-4,      
         joint=joint,
         opponent_modelling=opponent_modelling,
         td_target_update_interval=10,

@@ -53,7 +53,7 @@ def parse_args():
     parser.add_argument('-ms', "--max_steps", type=int, default=300000, help="reward type")
     parser.add_argument('-me', "--memory", type=int, default=0, help="reward type")
     parser.add_argument('-n', "--n", type=int, default=2, help="name of the game")
-    parser.add_argument('-bs', "--batch_size", type=int, default=64, help="name of the game")
+    parser.add_argument('-bs', "--batch_size", type=int, default=256, help="name of the game")
     parser.add_argument('-hm', "--hidden_size", type=int, default=100, help="name of the game")
     parser.add_argument('-re', "--repeat", type=bool, default=False, help="name of the game")
     parser.add_argument('-a', "--aux", type=bool, default=True, help="name of the game")
@@ -99,7 +99,7 @@ def main(arglist):
         model_name = model_name + '-{}'.format(arglist.aux)
 
     suffix = '{}/{}/{}/{}'.format(path_prefix, agent_num, model_name, timestamp)
-    tb_suffix = '{}_{}_{}_{}'.format(path_prefix, agent_num, model_name, timestamp)
+    tb_suffix = '{}_{}_{}_{}_batchsize_{}_buffersize_1e6'.format(path_prefix, agent_num, model_name, timestamp,arglist.batch_size)
 
     #print(suffix)
 
@@ -148,7 +148,7 @@ def main(arglist):
                     joint = True
                     opponent_modelling = True
                 agent = ddpg_agent(tb_writer,joint, opponent_modelling, model_names, i, env, M, u_range, base_kwargs, game_name=game_name)
-
+            print(agent._policy_lr)
             agents.append(agent)
 
         sampler.initialize(env, agents)
@@ -160,7 +160,7 @@ def main(arglist):
         gt.set_def_unique(False)
         initial_exploration_done = False
         # noise = 3.1
-        noise = 0.2  #1 is max
+        noise = 0.1  #1 is max
         alpha = .5
 
 
@@ -217,7 +217,8 @@ def main(arglist):
                         except:
                             pass
                 """
-                if epoch%1 == 0 and t%24==0:
+                #print(t)
+                if epoch%1 == 0 and t==24:
                     for j in range(base_kwargs['n_train_repeat']):
                         batch_n = []
                         recent_batch_n = []

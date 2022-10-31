@@ -268,7 +268,7 @@ class MADDPG(MARLAlgorithm):
         self._sess.run(self._training_ops, feed_dict)
         #print(iteration)
         #if iteration % self._qf_target_update_interval == 0 and self._train_qf:
-        if epoch%10  ==0 and iteration%24==0:
+        if epoch%self._qf_target_update_interval  ==0 and iteration==24:
             print(iteration)
             self._sess.run(self._target_ops)  # NOTE: changedt
         self.log_diagnostics(iteration,batch)
